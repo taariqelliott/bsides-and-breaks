@@ -6,6 +6,7 @@ import {
   useUser,
 } from "@clerk/tanstack-react-start";
 import { convexQuery } from "@convex-dev/react-query";
+import { faker } from "@faker-js/faker";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { api } from "convex/_generated/api";
@@ -21,13 +22,16 @@ function Home() {
   console.log(user.user?.id);
   const addtask = useMutation(api.tasks.createTask);
 
-  const runRandomTask = () => {
-    let letters = "abcdefghijklmnopqrstuvwxyz";
-    let text = "";
-    while (text.length < 10) {
-      text += letters[Math.floor(Math.random() * letters.length)];
-    }
+  const addRandomTask = () => {
+    const text = faker.string.uuid();
     addtask({ text });
+  };
+
+  const batchAddTasks = async () => {
+    for (let i = 0; i < 200; i++) {
+      addRandomTask();
+      setTimeout(() => {}, 100);
+    }
   };
 
   const deleteTask = useMutation(api.tasks.deleteTask);
@@ -36,29 +40,41 @@ function Home() {
     <div className="flex items-center justify-center flex-col gap-1 h-screen">
       <SignedIn>
         <div className="flex items-center h-[40%] justify-center flex-col gap-1">
-          <h1>Index Route</h1>
           <p>You are signed in</p>
-          <UserButton />
+          <section className="absolute top-2 right-2">
+            <UserButton />
+          </section>
           <p>{user.user?.fullName}</p>
-          <p>{user.user?.firstName}</p>
-          <p>{user.user?.lastName}</p>
+          <p>{user.user?.username}</p>
           <p>{user.user?.id}</p>
           <p>{user.user?.lastSignInAt?.toLocaleString()}</p>
-          <button className="border px-2 py-1 rounded" onClick={runRandomTask}>
+          <button
+            className="border cursor-pointer hover:bg-zinc-900 hover:text-zinc-50 transition-all duration-100 px-2 py-1 rounded"
+            onClick={addRandomTask}
+          >
             Add Task
+          </button>
+          <button
+            className="border cursor-pointer hover:bg-zinc-900 hover:text-zinc-50 transition-all duration-100 px-2 py-1 rounded"
+            onClick={batchAddTasks}
+          >
+            Batch Add
           </button>
         </div>
 
-        <div className="h-[60%] w-full mx-auto flex flex-wrap content-start gap-2 px-2 py-1 overflow-auto border bg-zinc-900">
+        <div className="h-[60%] w-full flex flex-wrap content-start gap-2 px-2 py-1 overflow-auto border bg-zinc-800">
+          {data.length === 0 && <p className="text-zinc-50">No Data</p>}
           {data.map(({ _id, text }) => (
             <div
               key={_id}
-              className="flex items-center justify-between text-zinc-50 gap-2 border w-48 h-12 rounded px-4 py-2"
+              className="flex items-center justify-between text-zinc-50 gap-2 border w-36 h-12 rounded px-4 py-2"
             >
-              <p>{text}</p>
+              <p className="flex flex-nowrap whitespace-nowrap overflow-auto w-18">
+                {text}
+              </p>
               <button
                 onClick={() => deleteTask({ id: _id })}
-                className="rounded border-red-700 flex items-center justify-center border bg-red-500 text-zinc-50 w-6 h-6 transition-all duration-200 hover:scale-110"
+                className="rounded-lg border-red-800 flex items-center justify-center border bg-red-500 text-zinc-50 w-6 h-6 transition-all duration-200 hover:scale-110"
               >
                 X
               </button>
