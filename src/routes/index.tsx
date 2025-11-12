@@ -44,9 +44,9 @@ export const Route = createFileRoute("/")({
 });
 
 function Home() {
-  const deleteTaskMutation = useMutation(api.tasks.deleteTask);
-  const addRandomTaskMutation = useMutation(api.tasks.createTask);
-  const { data } = useSuspenseQuery(convexQuery(api.tasks.get, {}));
+  const deleteSongMutation = useMutation(api.songs.deleteSong);
+  const addRandomSongMutation = useMutation(api.songs.createSong);
+  const { data } = useSuspenseQuery(convexQuery(api.songs.get, {}));
   const { userId, fullName, lastSignInAt, username } = Route.useLoaderData();
   const { user } = useUser();
 
@@ -58,15 +58,15 @@ function Home() {
     }
   };
 
-  const addRandomTask = () => {
-    const text = faker.string.uuid();
-    addRandomTaskMutation({ text });
+  const addRandomSong = () => {
+    const text = faker.music.songName();
+    addRandomSongMutation({ text });
   };
 
-  const batchAddTasks = async () => {
-    for (let i = 0; i < 20; i++) {
-      addRandomTask();
-      setTimeout(() => {}, 300);
+  const batchAddSongs = async () => {
+    for (let i = 0; i < 100; i++) {
+      addRandomSong();
+      setTimeout(() => {}, 20);
     }
   };
 
@@ -93,13 +93,13 @@ function Home() {
           </div>
           <button
             className="bg-zinc-800 w-30 hover:bg-zinc-900 text-white font-bold py-2 px-4 rounded-lg transition-all duration-100"
-            onClick={addRandomTask}
+            onClick={addRandomSong}
           >
-            Add Task
+            Add Song
           </button>
           <button
             className="bg-zinc-500 w-30 hover:bg-zinc-700 text-white font-bold py-2 px-4 rounded-lg transition-all duration-100"
-            onClick={batchAddTasks}
+            onClick={batchAddSongs}
           >
             Batch Add
           </button>
@@ -118,7 +118,7 @@ function Home() {
             >
               <p className="text-zinc-50 grow overflow-auto">{text}</p>
               <button
-                onClick={() => deleteTaskMutation({ id: _id })}
+                onClick={() => deleteSongMutation({ id: _id })}
                 className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md transition-all duration-200"
               >
                 Delete
