@@ -3,6 +3,7 @@ import {
   SignedOut,
   SignInButton,
   UserButton,
+  useUser,
 } from "@clerk/tanstack-react-start";
 import { auth, clerkClient } from "@clerk/tanstack-react-start/server";
 import { convexQuery } from "@convex-dev/react-query";
@@ -47,6 +48,15 @@ function Home() {
   const addRandomTaskMutation = useMutation(api.tasks.createTask);
   const { data } = useSuspenseQuery(convexQuery(api.tasks.get, {}));
   const { userId, fullName, lastSignInAt, username } = Route.useLoaderData();
+  const { user } = useUser();
+
+  const updateUsername = async () => {
+    try {
+      await user?.update({ username: "mr_elliott" });
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   const addRandomTask = () => {
     const text = faker.string.uuid();
@@ -65,15 +75,21 @@ function Home() {
       <SignedIn>
         <div className="w-full flex flex-col items-center gap-4 mb-8">
           <h1 className="text-lg font-bold text-zinc-50">Dashboard</h1>
-          <p className="text-gray-500 text-sm">You are signed in</p>
+          <p className="text-zinc-700 text-sm">You are signed in</p>
           <section className="absolute bottom-2 left-2">
             <UserButton />
           </section>
+          <button
+            onClick={updateUsername}
+            className="bg-zinc-800 w-30 hover:bg-zinc-900 text-white font-bold py-2 px-4 rounded-lg transition-all duration-100"
+          >
+            update username
+          </button>
           <div className="flex flex-col gap-2 mb-4">
-            <p className="text-lg font-bold text-zinc-50">{fullName}</p>
-            <p className="text-gray-500 text-sm">{username}</p>
-            <p className="text-gray-500 text-sm">{userId}</p>
-            <p className="text-gray-500 text-sm">{lastSignInAt}</p>
+            <p className="text-lg font-bold text-zinc-500">{fullName}</p>
+            <p className="text-zinc-500 text-sm">{username}</p>
+            <p className="text-zinc-500 text-sm">{userId}</p>
+            <p className="text-zinc-500 text-sm">{lastSignInAt}</p>
           </div>
           <button
             className="bg-zinc-800 w-30 hover:bg-zinc-900 text-white font-bold py-2 px-4 rounded-lg transition-all duration-100"
@@ -82,7 +98,7 @@ function Home() {
             Add Task
           </button>
           <button
-            className="bg-gray-500 w-30 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-all duration-100"
+            className="bg-zinc-500 w-30 hover:bg-zinc-700 text-white font-bold py-2 px-4 rounded-lg transition-all duration-100"
             onClick={batchAddTasks}
           >
             Batch Add
@@ -91,7 +107,7 @@ function Home() {
 
         <div className="h-full w-full flex flex-col gap-2 p-4 overflow-auto border bg-zinc-800">
           {data.length === 0 && (
-            <p className="text-center text-lg font-bold text-gray-50">
+            <p className="text-center text-lg font-bold text-zinc-50">
               No Data
             </p>
           )}
@@ -100,7 +116,7 @@ function Home() {
               key={_id}
               className="flex items-center justify-between p-4 gap-2 rounded-md shadow-md transition-all duration-200 hover:shadow-lg"
             >
-              <p className="text-gray-50 grow overflow-auto">{text}</p>
+              <p className="text-zinc-50 grow overflow-auto">{text}</p>
               <button
                 onClick={() => deleteTaskMutation({ id: _id })}
                 className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md transition-all duration-200"
@@ -112,7 +128,7 @@ function Home() {
         </div>
       </SignedIn>
       <SignedOut>
-        <p className="text-gray-500 text-sm">You are signed out</p>
+        <p className="text-zinc-500 text-sm">You are signed out</p>
         <SignInButton />
       </SignedOut>
     </div>
