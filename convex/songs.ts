@@ -8,10 +8,20 @@ export const get = query({
   },
 });
 
-export const createSong = mutation({
-  args: { text: v.string() },
+export const addSong = mutation({
+  args: {
+    albumArtist: v.string(),
+    albumName: v.string(),
+    albumGenre: v.string(),
+    songName: v.string(),
+  },
   handler: async (ctx, args) => {
-    const newSongId = await ctx.db.insert("songs", { text: args.text });
+    const newSongId = await ctx.db.insert("songs", {
+      albumArtist: args.albumArtist,
+      albumName: args.albumName,
+      albumGenre: args.albumGenre,
+      songName: args.songName,
+    });
     return newSongId;
   },
 });
