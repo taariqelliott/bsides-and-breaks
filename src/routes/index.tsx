@@ -3,87 +3,116 @@ import {
   SignedOut,
   SignInButton,
   UserButton,
-  useUser,
 } from "@clerk/tanstack-react-start";
+import { auth, clerkClient } from "@clerk/tanstack-react-start/server";
 import { convexQuery } from "@convex-dev/react-query";
 import { faker } from "@faker-js/faker";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createServerFn } from "@tanstack/react-start";
 import { api } from "convex/_generated/api";
 import { useMutation } from "convex/react";
 
+const authStateFn = createServerFn({ method: "GET" }).handler(async () => {
+  const { isAuthenticated, userId } = await auth();
+  if (!isAuthenticated) {
+    throw redirect({
+      to: "/sign-in/$",
+    });
+  }
+  const user = await clerkClient().users.getUser(userId);
+  return {
+    userId,
+    username: user?.username,
+    lastSignInAt: user?.lastSignInAt,
+    fullName: user?.fullName,
+  };
+});
+
 export const Route = createFileRoute("/")({
   component: Home,
+  beforeLoad: () => authStateFn(),
+  loader: async ({ context }) => {
+    return {
+      userId: context.userId,
+      lastSignInAt: context.lastSignInAt,
+      username: context.username,
+      fullName: context.fullName,
+    };
+  },
 });
 
 function Home() {
+  const deleteTaskMutation = useMutation(api.tasks.deleteTask);
+  const addRandomTaskMutation = useMutation(api.tasks.createTask);
   const { data } = useSuspenseQuery(convexQuery(api.tasks.get, {}));
-  const user = useUser();
-  console.log(user.user?.id);
-  const addtask = useMutation(api.tasks.createTask);
+  const { userId, fullName, lastSignInAt, username } = Route.useLoaderData();
 
   const addRandomTask = () => {
     const text = faker.string.uuid();
-    addtask({ text });
+    addRandomTaskMutation({ text });
   };
 
   const batchAddTasks = async () => {
-    for (let i = 0; i < 200; i++) {
+    for (let i = 0; i < 20; i++) {
       addRandomTask();
-      setTimeout(() => {}, 100);
+      setTimeout(() => {}, 300);
     }
   };
 
-  const deleteTask = useMutation(api.tasks.deleteTask);
-
   return (
-    <div className="flex items-center justify-center flex-col gap-1 h-screen">
+    <div className="flex items-center justify-center h-screen">
       <SignedIn>
-        <div className="flex items-center h-[40%] justify-center flex-col gap-1">
-          <p>You are signed in</p>
-          <section className="absolute top-2 right-2">
+        <div className="w-full flex flex-col items-center gap-4 mb-8">
+          <h1 className="text-lg font-bold text-zinc-50">Dashboard</h1>
+          <p className="text-gray-500 text-sm">You are signed in</p>
+          <section className="absolute bottom-2 left-2">
             <UserButton />
           </section>
-          <p>{user.user?.fullName}</p>
-          <p>{user.user?.username}</p>
-          <p>{user.user?.id}</p>
-          <p>{user.user?.lastSignInAt?.toLocaleString()}</p>
+          <div className="flex flex-col gap-2 mb-4">
+            <p className="text-lg font-bold text-zinc-50">{fullName}</p>
+            <p className="text-gray-500 text-sm">{username}</p>
+            <p className="text-gray-500 text-sm">{userId}</p>
+            <p className="text-gray-500 text-sm">{lastSignInAt}</p>
+          </div>
           <button
-            className="border cursor-pointer hover:bg-zinc-900 hover:text-zinc-50 transition-all duration-100 px-2 py-1 rounded"
+            className="bg-zinc-800 w-30 hover:bg-zinc-900 text-white font-bold py-2 px-4 rounded-lg transition-all duration-100"
             onClick={addRandomTask}
           >
             Add Task
           </button>
           <button
-            className="border cursor-pointer hover:bg-zinc-900 hover:text-zinc-50 transition-all duration-100 px-2 py-1 rounded"
+            className="bg-gray-500 w-30 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded-lg transition-all duration-100"
             onClick={batchAddTasks}
           >
             Batch Add
           </button>
         </div>
 
-        <div className="h-[60%] w-full flex flex-wrap content-start gap-2 px-2 py-1 overflow-auto border bg-zinc-800">
-          {data.length === 0 && <p className="text-zinc-50">No Data</p>}
+        <div className="h-full w-full flex flex-col gap-2 p-4 overflow-auto border bg-zinc-800">
+          {data.length === 0 && (
+            <p className="text-center text-lg font-bold text-gray-50">
+              No Data
+            </p>
+          )}
           {data.map(({ _id, text }) => (
             <div
               key={_id}
-              className="flex items-center justify-between text-zinc-50 gap-2 border w-36 h-12 rounded px-4 py-2"
+              className="flex items-center justify-between p-4 gap-2 rounded-md shadow-md transition-all duration-200 hover:shadow-lg"
             >
-              <p className="flex flex-nowrap whitespace-nowrap overflow-auto w-18">
-                {text}
-              </p>
+              <p className="text-gray-50 grow overflow-auto">{text}</p>
               <button
-                onClick={() => deleteTask({ id: _id })}
-                className="rounded-lg border-red-800 flex items-center justify-center border bg-red-500 text-zinc-50 w-6 h-6 transition-all duration-200 hover:scale-110"
+                onClick={() => deleteTaskMutation({ id: _id })}
+                className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-md transition-all duration-200"
               >
-                X
+                Delete
               </button>
             </div>
           ))}
         </div>
       </SignedIn>
       <SignedOut>
-        <p>You are signed out</p>
+        <p className="text-gray-500 text-sm">You are signed out</p>
         <SignInButton />
       </SignedOut>
     </div>
